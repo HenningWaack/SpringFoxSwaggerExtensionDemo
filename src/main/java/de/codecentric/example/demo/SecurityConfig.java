@@ -1,12 +1,15 @@
 package de.codecentric.example.demo;
 
+import de.codecentric.example.demo.documentation.MatchersSecurityConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
+import org.springframework.context.annotation.Scope;
+import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.crypto.password.NoOpPasswordEncoder;
+import org.springframework.web.context.WebApplicationContext;
 
 @Configuration
 //@EnableGlobalMethodSecurity(prePostEnabled = true)
@@ -22,20 +25,27 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     };
 
     @Override
-    protected void configure(HttpSecurity http) throws Exception {
-        super.configure(http);
+    protected void configure(HttpSecurity httpSecurity) throws Exception {
+        super.configure(httpSecurity);
 
-        http.csrf().disable();
-        http.httpBasic();
+        httpSecurity.csrf().disable();
+        httpSecurity.httpBasic();
         // auth for REST api
-        http.authorizeRequests()
-                .antMatchers(HttpMethod.POST, "/user").hasRole("admin")
-                .antMatchers(HttpMethod.GET, "/user/*").hasAnyRole("admin", "user")
+        httpSecurity.authorizeRequests()
+                //.antMatchers(HttpMethod.POST, "/user").hasRole("admin")
+                //.antMatchers(HttpMethod.GET, "/user/*").hasAnyRole("admin", "user")
                 .antMatchers(AUTH_WHITELIST_SPRINGFOX).hasAnyRole("user", "admin");
-        // auth for swagger ui
-        http.authorizeRequests()
-                .antMatchers(AUTH_WHITELIST_SPRINGFOX).hasAnyRole("user", "admin");
-        http.authorizeRequests().anyRequest().fullyAuthenticated();
+
+        this.getMatchersSecurityConfiguration().getMatchers().applySecurity(httpSecurity);
+
+        httpSecurity.authorizeRequests().anyRequest().fullyAuthenticated();
+    }
+
+    @Bean
+    @Scope(scopeName = WebApplicationContext.SCOPE_APPLICATION,
+            proxyMode = ScopedProxyMode.TARGET_CLASS)
+    public MatchersSecurityConfiguration getMatchersSecurityConfiguration() {
+        return new MatchersSecurityConfiguration();
     }
 
     @Override
