@@ -1,10 +1,7 @@
 package de.codecentric.example.demo;
 
 import de.codecentric.example.demo.documentation.ApiRoleAccessNotes;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.annotations.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -21,7 +18,7 @@ public class MyRestController {
     Logger logger = LoggerFactory.getLogger(MyRestController.class);
 
     @RequestMapping(method = RequestMethod.GET, value = "/user/{username}", produces = APPLICATION_JSON_VALUE)
-    @ApiOperation("Get details of a user with the given username")
+    @ApiOperation(value = "Get details of a user with the given username", authorizations={@Authorization(value = "BasicAuth")})
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Details about the given user"),
             @ApiResponse(code = 401, message = "Cannot authenticate"),
@@ -36,7 +33,7 @@ public class MyRestController {
 
     @PostMapping(value = "/user", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
-    @ApiOperation("Get details of a user with the given username")
+    @ApiOperation(value = "Create a new user or update an existing user (based on username)", authorizations={@Authorization(value = "BasicAuth")})
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "User was successfully updated"),
             @ApiResponse(code = 200, message = "User was successfully created"),
@@ -47,5 +44,4 @@ public class MyRestController {
     public void createUser(@Valid @RequestBody UserDTO userDTO) {
         logger.debug("Creating user with username '%'", userDTO.getUsername());
     }
-
 }

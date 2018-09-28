@@ -1,20 +1,19 @@
 package de.codecentric.example.demo;
 
 import de.codecentric.example.demo.documentation.MatchersSecurityConfiguration;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Scope;
-import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.crypto.password.NoOpPasswordEncoder;
-import org.springframework.web.context.WebApplicationContext;
 
 @Configuration
-//@EnableGlobalMethodSecurity(prePostEnabled = true)
-//@EnableWebSecurity
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
+
+    @Autowired
+    private MatchersSecurityConfiguration matchersSecurityConfiguration;
 
     private static final String[] AUTH_WHITELIST_SPRINGFOX = {
             // -- swagger ui
@@ -36,16 +35,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 //.antMatchers(HttpMethod.GET, "/user/*").hasAnyRole("admin", "user")
                 .antMatchers(AUTH_WHITELIST_SPRINGFOX).hasAnyRole("user", "admin");
 
-        this.getMatchersSecurityConfiguration().getMatchers().applySecurity(httpSecurity);
+        matchersSecurityConfiguration.getMatchers().configure(httpSecurity);
 
         httpSecurity.authorizeRequests().anyRequest().fullyAuthenticated();
-    }
-
-    @Bean
-    @Scope(scopeName = WebApplicationContext.SCOPE_APPLICATION,
-            proxyMode = ScopedProxyMode.TARGET_CLASS)
-    public MatchersSecurityConfiguration getMatchersSecurityConfiguration() {
-        return new MatchersSecurityConfiguration();
     }
 
     @Override

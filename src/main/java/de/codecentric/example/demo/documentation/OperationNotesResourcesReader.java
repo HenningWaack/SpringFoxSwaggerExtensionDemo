@@ -35,39 +35,36 @@ public class OperationNotesResourcesReader implements OperationBuilderPlugin {
     public void apply(OperationContext context) {
         try {
             Optional<ApiRoleAccessNotes> methodAnnotation = context.findAnnotation(ApiRoleAccessNotes.class);
-            if (methodAnnotation.isPresent() ) {
-                String noteText = "Accessible by users having one of the following roles: ";
-                if (matchersSecurityConfiguration != null) {
-                    HttpMethodResourceAntMatchers allMatchers = matchersSecurityConfiguration.getMatchers();
-                    for (HttpMethodResourceAntMatcher m : allMatchers.matcherList) {
-                        Optional<RequestMapping> requestMappingOptional = context.findAnnotation(RequestMapping.class);
-                        if (m.getMethod() == getHttpMethod(requestMappingOptional)) {
-                            AntPathMatcher matcher = new AntPathMatcher();
-                            String path = context.requestMappingPattern();
-                            if (path == null) {
-                                continue;
-                            }
-                            boolean matches = matcher.match(m.getAntPattern(), path);
-                            if (matches) {
-                                noteText += String.join(", ", m.getRoles());
-                            }
-                        }
-
-                    }
-                    context.operationBuilder().notes(descriptions.resolve(noteText));
-                }
+            if ( !methodAnnotation.isPresent() || this.matchersSecurityConfiguration == null) {
+                return;
             }
+            String apiRoleAccessNoteText = "Accessible by users having one of the following roles: ";
+            HttpMethodResourceAntMatchers matchers = matchersSecurityConfiguration.getMatchers();
+            for (HttpMethodResourceAntMatcher matcher : matchers.matcherList) {
+                Optional<RequestMapping> requestMappingOptional = context.findAnnotation(RequestMapping.class);
+                if (matcher.getMethod() == getHttpMethod(requestMappingOptional)) {
+                    AntPathMatcher antPathMatcher = new AntPathMatcher();
+                    String path = context.requestMappingPattern();
+                    if (path == null) {
+                        continue;
+                    }
+                    boolean matches = antPathMatcher.match(matcher.getAntPattern(), path);
+                    if (matches) {
+                        apiRoleAccessNoteText += String.join(", ", matcher.getRoles());
+                    }
+                }
+
+            }
+            context.operationBuilder().notes(descriptions.resolve(apiRoleAccessNoteText));
         } catch (Exception e) {
             logger.error("Error when creating swagger documentation for security roles: " + e);
         }
     }
 
     private HttpMethod getHttpMethod(Optional<RequestMapping> requestMappingOptional) {
-
         if (!requestMappingOptional.isPresent()) return null;
         if (requestMappingOptional.get().method() == null || requestMappingOptional.get().method()[0] == null)
             return null;
-
         RequestMethod requestMethod = requestMappingOptional.get().method()[0];
         switch (requestMethod) {
             case GET:
