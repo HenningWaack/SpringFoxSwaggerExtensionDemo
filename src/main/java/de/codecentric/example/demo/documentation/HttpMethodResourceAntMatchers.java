@@ -23,7 +23,7 @@ public class HttpMethodResourceAntMatchers {
                 httpSecurity.authorizeRequests().antMatchers(matcher.getMethod(), matcher.getAntPattern()).hasAnyRole(matcher.getRoles());
             } catch (Exception e) {
                 e.printStackTrace();
-                logger.error("Could not antMatchers Matcher to httpSecurity. Matcher: " + matcher + ". Exceptzion:" + e);
+                logger.error("Could not antMatchers Matcher to httpSecurity. Matcher: " + matcher + ". Exception:" + e);
                 throw e;
             }
         }

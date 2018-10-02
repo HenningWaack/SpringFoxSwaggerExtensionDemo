@@ -11,14 +11,13 @@ import org.springframework.util.AntPathMatcher;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import springfox.documentation.spi.DocumentationType;
-import springfox.documentation.spi.service.OperationBuilderPlugin;
 import springfox.documentation.spi.service.contexts.OperationContext;
 import springfox.documentation.spring.web.DescriptionResolver;
 import springfox.documentation.swagger.common.SwaggerPluginSupport;
 
 @Component
 @Order(SwaggerPluginSupport.SWAGGER_PLUGIN_ORDER)
-public class OperationNotesResourcesReader implements OperationBuilderPlugin {
+public class OperationNotesResourcesReader implements springfox.documentation.spi.service.OperationBuilderPlugin {
     private final DescriptionResolver descriptions;
 
     @Autowired
@@ -36,11 +35,14 @@ public class OperationNotesResourcesReader implements OperationBuilderPlugin {
         try {
             Optional<ApiRoleAccessNotes> methodAnnotation = context.findAnnotation(ApiRoleAccessNotes.class);
             if ( !methodAnnotation.isPresent() || this.matchersSecurityConfiguration == null) {
+                // the REST Resource does not have the @ApiRoleAccessNotes annotation --> ignore
                 return;
             }
             String apiRoleAccessNoteText = "Accessible by users having one of the following roles: ";
             HttpMethodResourceAntMatchers matchers = matchersSecurityConfiguration.getMatchers();
+            // get all configured ant-matchers and try to match with the current REST resource
             for (HttpMethodResourceAntMatcher matcher : matchers.matcherList) {
+                // get the RequestMapping annotation, which contains the http-method
                 Optional<RequestMapping> requestMappingOptional = context.findAnnotation(RequestMapping.class);
                 if (matcher.getMethod() == getHttpMethod(requestMappingOptional)) {
                     AntPathMatcher antPathMatcher = new AntPathMatcher();
@@ -49,11 +51,12 @@ public class OperationNotesResourcesReader implements OperationBuilderPlugin {
                         continue;
                     }
                     boolean matches = antPathMatcher.match(matcher.getAntPattern(), path);
-                    if (matches) {
-                        apiRoleAccessNoteText += String.join(", ", matcher.getRoles());
+                    if (matches && matcher.getRoles().length > 0) {
+                        // we found a match for both http-method and URL-path, get the roles
+                        // add the roles to the notes. Use Markdown notation to create a list
+                        apiRoleAccessNoteText = apiRoleAccessNoteText + "\n * " +  String.join("\n * ", matcher.getRoles());
                     }
                 }
-
             }
             context.operationBuilder().notes(descriptions.resolve(apiRoleAccessNoteText));
         } catch (Exception e) {
