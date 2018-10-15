@@ -1,5 +1,7 @@
 README_blog.md
 
+.gradletasknamecache
+
 .gradle
 /build/
 !gradle/wrapper/gradle-wrapper.jar
